@@ -8,16 +8,9 @@ library(magrittr)
 # `seedVal`: The seed for the optimizer
 f <- function(model_code, data) {
 
-  # create a tmp_res result object
-  tmp_res <- NULL
-  tmp_res$return_code <- NA
-    i = 1
-    # repeat optimizing until a zero return code 
-  while(tmp_res$return_code != 0){
-  
   # `optimizing` comes from `rstan`, assumption is that `rstan` has already
   # been loaded.
-  tmp_res <- optimizing(
+  optimizing(
     # Compile the model on the cluster. Don't save the .dso, this guarantees
     # that it will not be reused.
     object = stan_model(verbose=T, save_dso=F, model_code=model_code),
@@ -27,12 +20,7 @@ f <- function(model_code, data) {
     verbose = T,
     as_vector = F,
   )
-  i = i+1
-  if(i > 5){break} # maximum number of tries
-  }
-    tmp_res
 }
-    
 
 # Use ClusterMQ to connect to the cluster, compile the model, and run it.
 # This function can easily be modified to perform various experiments. See
