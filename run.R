@@ -13,19 +13,100 @@ f <- function(model_code, data) {
   optimizing(
     # Compile the model on the cluster. Don't save the .dso, this guarantees
     # that it will not be reused.
-    object = stan_model(verbose=T, save_dso=F, model_code=model_code),
+    object = stan_model(save_dso=F, model_code=model_code),
     data = data,
     algorithm = "BFGS",
-    iter = 1500, 
+    iter = 1e4, 
     verbose = T,
     as_vector = F,
   )
 }
 
+fMultiple <- function(
+  model_code,
+  data,
+  tries   = 15,
+  iter    = 6e3,
+  timeout = 5*60
+) {
+  rstan_options(auto_write = T)
+  
+  runOptimizerWithSeed <- function(i) {
+    startTime <- Sys.time()
+
+    rstan::optimizing(
+      object    = stan_model(model_code = model_code),
+      data      = data,
+      algorithm = "BFGS",
+      iter      = iter,
+      as_vector = FALSE # Otherwise you get a sloppy list structure
+    ) -> result
+
+    endTime <- Sys.time()
+
+    message(glue::glue(
+      'Finished try #{i} in {dt} with exit code {ec}',
+      dt = prettyunits::pretty_dt(endTime - startTime),
+      ec = result$return_code
+    ));
+
+    result
+  }
+
+  # This function will return NULL when there is a timeout
+  runOptimizerWithSeedInTime <- function(i, timeout)
+    tryCatch(
+      R.utils::withTimeout(runOptimizerWithSeed(i), timeout = timeout),
+      error = function(c) {
+        message(glue::glue('Abandoned try #{i} due to timeout'))
+
+        NULL
+      }
+    )
+
+  # Run the optimizer on all the different seeds
+  results <- purrr::map(
+    1:tries,
+    runOptimizerWithSeedInTime,
+    timeout = timeout
+  )
+
+  # Return code of 0 indicates success for `rstan::optimizing`. This is just
+  # a standard UNIX return code b/c `rstan::optimizing` calls into CmdStan.
+  successful_results <-
+    # Removes >0 return-val runs, and timed-out runs
+    purrr::keep(purrr::discard(results, is.null), ~.$return_code == 0)
+
+  if (length(successful_results) == 0)
+    stop("All BFGS runs timed out or failed!")
+
+  # Extract the mode of the posterior from the results that didn't time out
+  # and didn't return an error code of 70
+  opt_vals <- purrr::map_dbl(successful_results, 'value') 
+
+  # In theory the log posterior could be infinite (likely, -Infinity), which
+  # wouldn't be valid but would technically be the maximum value. Throw an
+  # error in this case.
+  if (is.infinite(max(opt_vals)))
+    stop(glue::glue(
+      'The value of the log posterior was infinite for these runs:\n{runs}',
+      runs = which(is.infinite(opt_vals) & opt_vals > 0)
+    ))
+
+  # The first successful result which has `opt_val` equal to the maximum
+  # `opt_val` is the result that will be returned too the user. Note that it's
+  # unlikely that there will be more that one trajectory with the same
+  # `opt_val`. However, if this is the case, the first of these results will
+  # be returned
+  result <- successful_results[which(opt_vals == max(opt_vals))][[1]]
+
+  result
+}
+
 # Use ClusterMQ to connect to the cluster, compile the model, and run it.
 # This function can easily be modified to perform various experiments. See
 # the docs: `?clustermq::Q`. Worker logs will be found in `~/`.
-run <- function(f, tests, codePath, jobs_per_worker = 4) {
+run <- function(f, tests, codePath, jobs_per_worker = 4, time_per_run = 12) {
   result <- Q(
     f,
     data = tests$config,
@@ -33,19 +114,22 @@ run <- function(f, tests, codePath, jobs_per_worker = 4) {
     job_size = jobs_per_worker,
     log_worker = T,
     pkgs = 'rstan',
-    template = list(time = jobs_per_worker * 3)
+    fail_on_error = F,
+    template = list(time = jobs_per_worker * time_per_run)
   )
 
   mutate(tests, result = result)
 }
 
-tests <- mutate(testset, region = "Connecticut", d = list(d)) %>% getConfigs
+# tests <- mutate(testset, region = "Connecticut", d = list(d)) %>% getConfigs
 
-states <- c("New York", "Florida", "New Hampshire", "Colorado")
+# states <- c("New York", "Florida", "New Hampshire", "Colorado")
+# 
+# map(
+#  states,
+#  ~mutate(testset, region = ., d = list(getStateInputs(.)))
+# ) %>% bind_rows %>% as_tibble %>% getConfigs -> tests3
+# 
+# test_results3 <- run(f, tests3, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12)
 
-map(
- states,
- ~mutate(testset, region = ., d = list(getStateInputs(.)))
-) %>% bind_rows %>% as_tibble %>% getConfigs -> tests2
-
-test_results2 <- run(f, tests2, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12)
+# test_results4 <- run(fMultiple, tests3, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12, time_per_run = 30)

@@ -1,24 +1,24 @@
-# master
-set0 <- data.frame(
-  group               = "master",
-  dateoffset          = 0,
-  "nspl_rt_knotwidth" = 5,
-  "sd_omicron_delay"  = 1,
-  "reinfection"       = FALSE,
-  "nRt"               = 0, 
-  "omicron_adjust"    = FALSE
-)
+  # master
+  set0 <- data.frame(
+    group               = "master",
+    dateoffset          = 0,
+    "nspl_rt_knotwidth" = 5,
+    "sd_omicron_delay"  = 1,
+    "reinfection"       = FALSE,
+    "nRt"               = 0, 
+    "omicron_adjust"    = FALSE
+  )
 
-# only knotwidth
-set1 <- expand.grid(
-  group               = "knotwidth",
-  dateoffset          = 0,
-  "nspl_rt_knotwidth" = 10,
-  "sd_omicron_delay"  = 1,
-  "reinfection"       = FALSE,
-  "nRt"               = 0, 
-  "omicron_adjust"    = FALSE
-) 
+  # only knotwidth
+  set1 <- expand.grid(
+    group               = "knotwidth",
+    dateoffset          = 0,
+    "nspl_rt_knotwidth" = 10,
+    "sd_omicron_delay"  = 1,
+    "reinfection"       = FALSE,
+    "nRt"               = 0, 
+    "omicron_adjust"    = FALSE
+  ) 
 
 ### setup for testing
 nspl_rt_knotwidth = 10
