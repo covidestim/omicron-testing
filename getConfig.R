@@ -6,7 +6,12 @@ library(purrr)
 getConfig <- function(d, region, dateoffset = 0, ...) {
   ndays <- d$ndays - abs(dateoffset)
 
-  cfg <- covidestim(ndays = ndays, region = region, ...) +
+  cfg <- covidestim(
+      ndays = ndays,
+      region = region,
+      pop_size = get_pop(region),
+      ...
+    ) +
     input_cases(d$cases[1:ndays,]) +
     input_deaths(d$deaths[1:ndays,]) +
     input_vaccines(d$RR[1:ndays,])

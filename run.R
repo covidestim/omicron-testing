@@ -111,15 +111,11 @@ run <- function(f, tests, codePath, jobs_per_worker = 4, time_per_run = 12) {
   mutate(tests, result = result)
 }
 
-# tests <- mutate(testset, region = "Connecticut", d = list(d)) %>% getConfigs
+states <- c("New York", "Florida", "New Hampshire", "Colorado")
 
-# states <- c("New York", "Florida", "New Hampshire", "Colorado")
-# 
 # map(
 #  states,
 #  ~mutate(testset, region = ., d = list(getStateInputs(.)))
-# ) %>% bind_rows %>% as_tibble %>% getConfigs -> tests3
+# ) %>% bind_rows %>% as_tibble %>% getConfigs -> tests
 # 
-# test_results3 <- run(f, tests3, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12)
-
 # test_results4 <- run(fMultiple, tests3, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12, time_per_run = 30)
