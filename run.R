@@ -80,7 +80,7 @@ fMultiple <- function(
     # In theory the log posterior could be infinite (likely, -Infinity), which
     # wouldn't be valid but would technically be the maximum value. Exclude
     # runs which have these values.
-    if (!is.null(r) && (r$return_code[1] == 0) && !is.infinite(r$value)) {
+    if (!is.null(r) && (r$return_code[1] == 0) && !is.infinite(r$value) && (r$value > -3000)) {
       message("[#{i}]: Good result!")
       result <- r # Commit the result as the final result
       break
@@ -113,9 +113,9 @@ run <- function(f, tests, codePath, jobs_per_worker = 4, time_per_run = 12) {
 
 states <- c("New York", "Florida", "New Hampshire", "Colorado")
 
-# map(
-#  states,
-#  ~mutate(testset, region = ., d = list(getStateInputs(.)))
-# ) %>% bind_rows %>% as_tibble %>% getConfigs -> tests
-# 
-# test_results4 <- run(fMultiple, tests3, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12, time_per_run = 30)
+map(
+ states,
+ ~mutate(testset, region = ., d = list(getInputs(.)))
+) %>% bind_rows %>% as_tibble %>% getConfigs -> tests
+
+test_results4 <- run(fMultiple, tests, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12, time_per_run = 30)
