@@ -80,7 +80,7 @@ fMultiple <- function(
     # In theory the log posterior could be infinite (likely, -Infinity), which
     # wouldn't be valid but would technically be the maximum value. Exclude
     # runs which have these values.
-    if (!is.null(r) && identical(r$return_code, 0) && !is.infinite(r$value)) {
+    if (!is.null(r) && (r$return_code[1] == 0) && !is.infinite(r$value)) {
       message("[#{i}]: Good result!")
       result <- r # Commit the result as the final result
       break
