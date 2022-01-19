@@ -22,8 +22,8 @@
 
 ### setup for testing
 nspl_rt_knotwidth = 10
-nRt = c(0, 1, 7)
-sd_omicron_delay = 10
+nRt = c(0,1)
+sd_omicron_delay = c(10,20)
 reinfection = c(TRUE, FALSE)
 omicron_adjust = TRUE
 
