@@ -60,5 +60,6 @@ set4 <- expand.grid(
 ) 
 
 testset <- rbind(set0, set1, set3, set4)
+testset <- rbind(set0, set3, set4)
 
 
