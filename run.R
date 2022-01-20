@@ -114,9 +114,16 @@ run <- function(f, tests, codePath, jobs_per_worker = 4, time_per_run = 12) {
 states <- c("New York", "Florida", "New Hampshire", "Colorado")
 counties <-  c("24027", "06023", "41039", "11001", "47007")
 
-map(
- states,
- ~mutate(testset, region = ., d = list(getInputs(.)))
-) %>% bind_rows %>% as_tibble %>% getConfigs -> tests
+# map(
+#  states,
+#  ~mutate(testset, region = ., d = list(getInputs(.)))
+# ) %>% bind_rows %>% as_tibble %>% getConfigs -> tests
 
-test_results4 <- run(fMultiple, tests, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12, time_per_run = 30)
+map(
+ counties,
+ ~mutate(testset, region = ., d = list(getInputs(.)))
+) %>% bind_rows %>% as_tibble %>% getConfigs -> tests_c
+# 
+test_results <- run(fMultiple, tests_c, "../covidestim/inst/stan/stan_program_default.stan", jobs_per_worker = 12, time_per_run = 30)
+
+saveRDS(test_results, 'test_results_counties_1.RDS')

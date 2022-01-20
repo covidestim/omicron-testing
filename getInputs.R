@@ -54,7 +54,7 @@ getCountyInputs <- function(fipsCode) {
 }
 
 getInputs <- function(geoName) {
-  if (str_detect(geoName, '[0-9]{5}'))
+  if (stringr::str_detect(geoName, '[0-9]{5}'))
     return(getCountyInputs(geoName))
   else
     return(getStateInputs(geoName))
