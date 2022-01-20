@@ -25,7 +25,7 @@ f <- function(model_code, data) {
 fMultiple <- function(
   model_code,
   data,
-  tries   = 15,
+  tries   = 10,
   iter    = 6e3,
   timeout = 5*60
 ) {
@@ -65,13 +65,13 @@ fMultiple <- function(
       }
     )
 
-  result <- NULL
+  results <- NULL
 
+  
   # Return the first time we get a non-obviously-bad result from BFGS, to save
   # time.
   for (i in 1:tries) {
     r <- runOptimizerWithSeedInTime(i, timeout)
-    
     # Return code of 0 indicates success for `rstan::optimizing`. This is just
     # a standard UNIX return code b/c `rstan::optimizing` calls into CmdStan.
     # 
@@ -80,15 +80,43 @@ fMultiple <- function(
     # In theory the log posterior could be infinite (likely, -Infinity), which
     # wouldn't be valid but would technically be the maximum value. Exclude
     # runs which have these values.
-    if (!is.null(r) && (r$return_code[1] == 0) && !is.infinite(r$value)) {
-      message("[#{i}]: Good result!")
-      result <- r # Commit the result as the final result
-      break
-    }
+    # if (!is.null(r) && (r$return_code[1] == 0) && !is.infinite(r$value)) {
+    #   message("[#{i}]: Good result!")
+    #   result <- r # Commit the result as the final result
+    #   break
+    # }
+    results[[i]] <- r
   }
-
-  if (is.null(result)) # Branch only occurs if no good result was I.D.'d.
-    stop("All BFGS runs timed out or failed or had Inf log-posteriors!")
+  
+  successful_results <-
+    purrr::discard(results, is.null) %>% # Removes timed-out runs
+    purrr::keep(., ~.$return_code == 0)  # Removes >0 return-val runs
+  
+  if (length(successful_results) == 0)
+    stop("All BFGS runs timed out or failed!")
+  
+  # Extract the mode of the posterior from the results that didn't time out
+  # and didn't return an error code of 70
+  opt_vals <- purrr::map_dbl(successful_results, 'value') 
+  
+  # In theory the log posterior could be infinite (likely, -Infinity), which
+  # wouldn't be valid but would technically be the maximum value. Throw an
+  # error in this case.
+  if (is.infinite(max(opt_vals)))
+    stop(glue::glue(
+      'The value of the log posterior was infinite for these runs:\n{runs}',
+      runs = which(is.infinite(opt_vals) & opt_vals > 0)
+    ))
+  
+  # The first successful result which has `opt_val` equal to the maximum
+  # `opt_val` is the result that will be returned too the user. Note that it's
+  # unlikely that there will be more that one trajectory with the same
+  # `opt_val`. However, if this is the case, the first of these results will
+  # be returned
+  result <- successful_results[which(opt_vals == max(opt_vals))][[1]]
+  # 
+  # if (is.null(result)) # Branch only occurs if no good result was I.D.'d.
+  #   stop("All BFGS runs timed out or failed or had Inf log-posteriors!")
 
   result
 }
