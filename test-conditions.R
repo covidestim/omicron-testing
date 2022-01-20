@@ -43,10 +43,10 @@ set3 <- expand.grid(
   group               = "omicron/reinfection/slidingdates",
   dateoffset          = seq(0, -40, by = -2),
   "nspl_rt_knotwidth" = 10,
-  "sd_omicron_delay"  = sd_omicron_delay,
-  "reinfection"       = reinfection,
-  "nRt"               = nRt, 
-  "omicron_adjust"    = omicron_adjust
+  "sd_omicron_delay"  = 20,#sd_omicron_delay,
+  "reinfection"       = TRUE,#reinfection,
+  "nRt"               = 1,#nRt, 
+  "omicron_adjust"    = TRUE#omicron_adjust
 ) 
 # omicron and reinfection tests, with sliding dates
 set4 <- expand.grid(
@@ -54,8 +54,8 @@ set4 <- expand.grid(
   dateoffset          = seq(0, -40, by = -2),
   "nspl_rt_knotwidth" = 10,
   "sd_omicron_delay"  = 1,
-  "reinfection"       = reinfection,
-  "nRt"               = nRt, 
+  "reinfection"       = TRUE,#reinfection,
+  "nRt"               = 1,#nRt, 
   "omicron_adjust"    = FALSE
 ) 
 

@@ -112,6 +112,7 @@ run <- function(f, tests, codePath, jobs_per_worker = 4, time_per_run = 12) {
 }
 
 states <- c("New York", "Florida", "New Hampshire", "Colorado")
+counties <-  c("24027", "06023", "41039", "11001", "47007")
 
 # map(
 #  states,
