@@ -27,10 +27,37 @@ fMultiple <- function(
   data,
   tries   = 10,
   iter    = 6e3,
-  timeout = 5*60
+  timeout = 5*60,
+  sampler = FALSE # TRUE requires at least 3 cores available
 ) {
+
   rstan_options(auto_write = T)
   model <- stan_model(model_code = model_code)
+  
+  if(sampler == TRUE) {
+    startTime <- Sys.time()
+    
+    rstan::sampling(
+      object  = model,
+      data    = data,
+      control = list(adapt_delta = .98, max_treedepth = 14),
+      chains  = 3,
+      iter    = 2000,
+      thin    = 1,
+      warmup  = round((2/3)*2000)) -> result
+    
+    result  <- rstan::summary(result)$summary
+    endTime <- Sys.time()
+
+    message(glue::glue(
+      'Finished try #{i} in {dt} with exit code {ec}',
+      dt = prettyunits::pretty_dt(endTime - startTime),
+      ec = result$return_code
+    ));
+     
+    return(result)
+     
+  }
   
   runOptimizerWithSeed <- function(i) {
     startTime <- Sys.time()
@@ -66,7 +93,6 @@ fMultiple <- function(
     )
 
   results <- NULL
-
   
   # Return the first time we get a non-obviously-bad result from BFGS, to save
   # time.
@@ -124,7 +150,7 @@ fMultiple <- function(
 # Use ClusterMQ to connect to the cluster, compile the model, and run it.
 # This function can easily be modified to perform various experiments. See
 # the docs: `?clustermq::Q`. Worker logs will be found in `~/`.
-run <- function(f, tests, codePath, jobs_per_worker = 4, time_per_run = 12) {
+run <- function(f, tests, codePath, jobs_per_worker = 4, time_per_run = 12, cores = 1) {
   result <- Q(
     f,
     data = tests$config,
@@ -133,7 +159,10 @@ run <- function(f, tests, codePath, jobs_per_worker = 4, time_per_run = 12) {
     log_worker = T,
     pkgs = c('rstan', 'glue', 'prettyunits'),
     fail_on_error = F,
-    template = list(time = jobs_per_worker * time_per_run)
+    template = list(
+      time = jobs_per_worker * time_per_run,
+      cores = cores
+    )
   )
 
   mutate(tests, result = result)
