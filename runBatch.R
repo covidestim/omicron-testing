@@ -10,7 +10,7 @@ library(readr)
 glue('covidestim runBatch utility
 
 Usage:
-  {name} -o <output_path> --tests <tests> --code <code> --time <time> --ncores <ncores>
+  {name} -o <output_path> --tests <tests> --code <code> --time <time> --ncores <ncores> --sampler <sampler>
   {name} (-h | --help)
   {name} --version
 
@@ -20,6 +20,7 @@ Options:
   --code <code>      Path to the .stan model
   --time <time>      Timelimit, in minutes, per run
   --ncores <ncores>  How many cores total to use. Go a bit low on this one.
+  --sampler <sampler>Logical, whether sampler should be run (TRUE) or not (FALSE)
   -h --help          Show this screen.
   --version          Show version.
 ', name = "runBatch.R") -> doc
@@ -42,11 +43,32 @@ fMultiple <- function(
   data,
   tries   = 10,
   iter    = 6e3,
-  timeout = 5*60
+  timeout = 5*60,
+  sampler = sampler
 ) {
   rstan_options(auto_write = T)
   model <- stan_model(model_code = model_code)
   
+  if(sampler == TRUE) {
+    
+    rstan::sampling(
+      object  = model,
+      data    = structure(cc$config, class="modelconfig"),
+      cores   = min(3, ncores),
+      control = list(adapt_delta = .98, max_treedepth = 14),
+      seed    = 42,
+      chains  = 3,
+      iter    = 2000,
+      thin    = 1,
+      warmup  = round((2/3)*2000),
+      ...
+    ) -> result
+    
+    result   = rstan::summary(result)$summary
+    
+    return(result)
+    
+  }
   runOptimizerWithSeed <- function(i) {
     startTime <- Sys.time()
 

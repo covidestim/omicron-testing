@@ -27,10 +27,33 @@ fMultiple <- function(
   data,
   tries   = 10,
   iter    = 6e3,
-  timeout = 5*60
+  timeout = 5*60,
+  sampler = FALSE # TRUE requires at least 3 cores available
 ) {
+
   rstan_options(auto_write = T)
   model <- stan_model(model_code = model_code)
+  
+  if(sampler == TRUE) {
+    
+    rstan::sampling(
+      object  = model,
+      data    = structure(cc$config, class="modelconfig"),
+      cores   = 3,
+      control = list(adapt_delta = .98, max_treedepth = 14),
+      seed    = 42,
+      chains  = 3,
+      iter    = 2000,
+      thin    = 1,
+      warmup  = round((2/3)*2000),
+      ...
+    ) -> result
+    
+     result   = rstan::summary(result)$summary
+     
+     return(result)
+     
+  }
   
   runOptimizerWithSeed <- function(i) {
     startTime <- Sys.time()
