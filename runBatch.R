@@ -10,7 +10,7 @@ library(readr)
 glue('covidestim runBatch utility
 
 Usage:
-  {name} -o <output_path> --tests <tests> --code <code> --time <time> --ncores <ncores>
+  {name} -o <output_path> --tests <tests> --code <code> --time <time> --jobsperworker <jobsperworker>
   {name} (-h | --help)
   {name} --version
 
@@ -19,7 +19,7 @@ Options:
   --tests <tests>    Path to an RDS archive, a tibble of tests to run
   --code <code>      Path to the .stan model
   --time <time>      Timelimit, in minutes, per run
-  --ncores <ncores>  How many cores total to use. Go a bit low on this one.
+  --jobsperworker <jobsperworker>  How many jobs per worker
   -h --help          Show this screen.
   --version          Show version.
 ', name = "runBatch.R") -> doc
@@ -34,8 +34,8 @@ tests        <- readRDS(args$tests)
 pd()
 
 codePath     <- args$code
-ncores       <- as.numeric(args$ncores)
 time_per_run <- as.numeric(args$time)
+jobs_per_worker <- as.numeric(args$jobsperworker)
 
 fMultiple <- function(
   model_code,
@@ -158,7 +158,7 @@ test_results <- run(
   f               = fMultiple,
   tests           = tests,
   codePath        = codePath,
-  jobs_per_worker = ceiling(nrow(tests)/ncores),
+  jobs_per_worker = jobs_per_worker,
   time_per_run    = time_per_run
 )
 cli_alert_info("Finished tests")
