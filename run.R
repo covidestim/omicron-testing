@@ -38,16 +38,14 @@ fMultiple <- function(
     
     rstan::sampling(
       object  = model,
-      data    = structure(cc$config, class="modelconfig"),
-      cores   = 3,
+      data    = data,
+      cores   = 1,
       control = list(adapt_delta = .98, max_treedepth = 14),
       seed    = 42,
       chains  = 3,
       iter    = 2000,
       thin    = 1,
-      warmup  = round((2/3)*2000),
-      ...
-    ) -> result
+      warmup  = round((2/3)*2000)) -> result
     
      result   = rstan::summary(result)$summary
      
