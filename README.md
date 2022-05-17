@@ -14,7 +14,7 @@ ssh -o "ExitOnForwardFailure yes" -f \
     -R {{ ctl_port }}:localhost:{{ local_port }} \
     -R {{ job_port }}:localhost:{{ fwd_port }} \
     {{ ssh_host }} \
-    "module load R ZeroMQ && \
+    "module load R ZeroMQ foss/2020b && \
      R --no-save --no-restore -e \
         'clustermq:::ssh_proxy(ctl={{ ctl_port }}, job={{ job_port }})' \
         > {{ ssh_log | /dev/null }} 2>&1"
@@ -25,7 +25,7 @@ Next, add the following to your `~/.Rprofile`. **Replace `user@host` with your c
 ```r
 options(
   clustermq.scheduler = "ssh",
-  clustermq.ssh.host = "user@host",
+  clustermq.ssh.host = "farnam",
   clustermq.ssh.log = "~/cmq_ssh.log", # log for easier debugging
   clustermq.template = "~/.config/clustermq/SSH.tmpl",
   clustermq.ssh.timeout = 20
@@ -42,9 +42,10 @@ Now, SSH into the cluster and save the following to `~/.config/clustermq/SLURM.t
 #SBATCH --mem-per-cpu={{ memory | 4096 }}
 #SBATCH --array=1-{{ n_jobs }}
 #SBATCH --cpus-per-task={{ cores | 1 }}
-#SBATCH --time={{ time | 30 }}
+#SBATCH --time={{ time | 5 }}
 
-module load R ZeroMQ
+module load R ZeroMQ foss/2020b
+
 ulimit -v $(( 1024 * {{ memory | 4096 }} ))
 CMQ_AUTH={{ auth }} R --no-save --no-restore -e 'clustermq:::worker("{{ master }}")'
 ```
